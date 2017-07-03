@@ -11,6 +11,8 @@ class REGDATA:
         dftest['SalePrice'] = 0
         self._df = pd.concat([dftrain,dftest])
     def remove_missing_data(self):
+        self._df = self._df.fillna(self._df.mean())
+        return
         total = self._df.isnull().sum().sort_values(ascending=False)
         percent = (self._df.isnull().sum() / self._df.isnull().count()).sort_values(ascending=False)
         md = pd.DataFrame({'total':total,'percent':percent})

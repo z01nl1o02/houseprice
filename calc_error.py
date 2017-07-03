@@ -20,8 +20,6 @@ class ERROR:
         df = pd.read_csv(filepath)
         E = self.RMSE_LOG(df['Y'],df['C'])
         print 'rmse log: ',E
-        E = self.RMSE(df['Y'],df['C'])
-        print 'rmse: ',E
         return E
     def run_all(self,indir):
         for root, pdirs, names in os.walk(indir):

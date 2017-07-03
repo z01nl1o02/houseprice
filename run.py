@@ -26,9 +26,10 @@ class HOUSE_PRICE:
       #  rawdata.add_higher_order()
         rawdata.one_hot_encoding()
         data = rawdata.get_train()
-        testX = rawdata.get_test()
+        self._testX = rawdata.get_test()
         names = data.columns.tolist()
         names.remove('SalePrice')
+        self._testX = self._testX[names]
         if ratio < 1 and ratio > 0:
             num = np.int64( len(data) * ratio)
             self._trainX = data[0:num][names]
@@ -36,9 +37,9 @@ class HOUSE_PRICE:
             self._verifyX = data[num:][names]
             self._verifyY = data[num:]['SalePrice']
         else:
-            self._trainX = data
+            self._trainX = data[names]
             self._trainY = data['SalePrice']
-            self._verifyX = data
+            self._verifyX = data[names]
             self._verifyY = data['SalePrice']
         return
     def train(self):
@@ -49,20 +50,28 @@ class HOUSE_PRICE:
         clf = PREDICTOR_GBOOST()
         clf.train(self._trainX, self._trainY)
         clf.write(self._outdir)
-
         return
     def test(self):
         clf_ridge = PREDICTOR_RIDGE()
         clf_ridge.read(self._outdir)
         testC = clf_ridge.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':self._verifyY, 'C':testC})
+        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
         res.to_csv( os.path.join(self._outdir,'ridge.log'), index=False, columns = 'Id,Y,C'.split(','))
+
+        self._testX.to_csv('test.convert.csv',index=False)
+        testC = clf_ridge.predict(self._testX)
+        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv( os.path.join(self._outdir,'ridge.csv'),
+                index=False, columns='Id,SalePrice'.split(','))
 
         clf = PREDICTOR_GBOOST()
         clf.read(self._outdir)
         testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':self._verifyY, 'C':testC})
+        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
         res.to_csv( os.path.join(self._outdir,'GBoost.log'), index=False, columns = 'Id,Y,C'.split(','))
+
+        testC = clf.predict(self._testX)
+        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,'GBoost.csv'), 
+                index=False,columns='Id,SalePrice'.split(','))
 
         return
     def run(self,indir):
