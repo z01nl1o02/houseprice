@@ -33,6 +33,11 @@ class REGDATA:
             pass
         self._df[skewed_feats] = np.log1p(self._df[skewed_feats])
         return
+    def standandlize(self):
+        feats = 'GrLivArea,TotalBsmtSF,BsmtFinSF1,1stFlrSF,LotArea,2ndFlrSF'.split(',')
+        for feat in feats:
+            self._df[feat] = (self._df[feat] - self._df[feat].mean()) / self._df[feat].std
+        return
     def selection(self):
         goodfeats = 'Id,SalePrice,OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,YearBuilt,1stFlrSF,OverallCond,KitchenAbvGr,LotArea,YearRemodAdd,2ndFlrSF'.split(',')
         self._df = self._df[goodfeats]
