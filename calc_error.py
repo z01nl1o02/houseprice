@@ -16,17 +16,20 @@ class ERROR:
         E = np.sqrt( ((Y - C) ** 2).mean() )
         return E
     def run(self,filepath):
-        print '======',filepath,'======='
         df = pd.read_csv(filepath)
         E = self.RMSE_LOG(df['Y'],df['C'])
-        print 'rmse log: ',E
         return E
     def run_all(self,indir):
+        res = []
         for root, pdirs, names in os.walk(indir):
             for name in names:
                 sname,ext = os.path.splitext(name)
                 if '.log' == ext:
-                    self.run(os.path.join(root,name))
+                    E = self.run(os.path.join(root,name))
+                    res.append((name,E))
+        res = sorted( res, key = lambda X: X[1])
+        for name, e in res:
+            print '%9f,%s'%(e,name)
         return
 if __name__=="__main__":
     ap = argparse.ArgumentParser()

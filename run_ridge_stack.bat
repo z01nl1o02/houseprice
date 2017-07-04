@@ -5,9 +5,9 @@ set clf=ridge
 set outroot=outI
 for /L %%n in (3,1,8) do (
 set r=0.%%n
-python run_stageI.py . !r! -split !r!
+python run_stageI.py . !r! -split !r! -testALL 1
 mkdir !outroot!\!r!
-copy !r!\!clf!.* !outroot!\!r!
+copy !r!\!clf!.* !outroot!\!r! 
 )
 
 

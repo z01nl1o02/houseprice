@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from regdata import REGDATA
 from predictor_ridge import PREDICTOR_RIDGE
+from predictor_ridgeboost import PREDICTOR_RIDGEBOOST
 from predictor_GBoost import PREDICTOR_GBOOST
 from predictor_svr import PREDICTOR_SVR
 from predictor_elasticnet import PREDICTOR_ELASTICNET
@@ -22,7 +23,7 @@ class HOUSE_PRICE:
         except Exception,e:
             pass
         return
-    def load_and_convert(self,indir, ratio):
+    def load_and_convert(self,indir, ratio,predictALL):
         rawdata = REGDATA(indir)
         rawdata.remove_missing_data()
         rawdata.remove_skewing()
@@ -34,7 +35,7 @@ class HOUSE_PRICE:
         names = data.columns.tolist()
         names.remove('SalePrice')
         self._testX = self._testX[names]
-        if 0 and ratio < 1 and ratio > 0:
+        if 0 == predictALL and ratio < 1 and ratio > 0: #for stacking, this line should be skipped !
             num = np.int64( len(data) * ratio)
             self._trainX = data[0:num][names]
             self._trainY = data[0:num]['SalePrice']
@@ -57,6 +58,7 @@ class HOUSE_PRICE:
         self.train_one_clf(PREDICTOR_ELASTICNET())
         self.train_one_clf(PREDICTOR_DTR())
         self.train_one_clf(PREDICTOR_RF())
+        self.train_one_clf(PREDICTOR_RIDGEBOOST())
         return
     def test_one_clf(self,clf):
         name = clf.name()
@@ -77,9 +79,10 @@ class HOUSE_PRICE:
         self.test_one_clf(PREDICTOR_ELASTICNET())
         self.test_one_clf(PREDICTOR_DTR())
         self.test_one_clf(PREDICTOR_RF())
+        self.test_one_clf(PREDICTOR_RIDGEBOOST())
         return
-    def run(self,indir, trainRatio):
-        self.load_and_convert(indir,trainRatio)
+    def run(self,indir, trainRatio, testALL):
+        self.load_and_convert(indir,trainRatio, testALL)
         self.train()
         self.test()
         return
@@ -89,8 +92,9 @@ if __name__=="__main__":
     ap.add_argument('indir',help='input dir')
     ap.add_argument('outdir',help='output dir')
     ap.add_argument('-split',help='split size for train(0,1)', type=np.float64, default=0.8)
+    ap.add_argument('-testALL',help='predict all samples(for stacking)', type=np.int64, default=0)
     args = ap.parse_args()
-    HOUSE_PRICE(args.outdir).run(args.indir, args.split)
+    HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
 
 
 
