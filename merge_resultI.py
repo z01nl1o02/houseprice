@@ -36,9 +36,9 @@ class MERGE_RES:
         total = len(self._train.columns) -  2
         header = ['Id','Y']
         header.extend( ['C'+str(k) for k in range(total)] )
-        self._train[header].to_csv(os.path.join(self._outdir,'train_merged.csv'), index=False)
+        self._train[header].to_csv(os.path.join(self._outdir,'train.csv'), index=False)
         header.remove('Y')
-        self._test[header].to_csv(os.path.join(self._outdir, 'test_merged.csv'), index=False)
+        self._test[header].to_csv(os.path.join(self._outdir, 'test.csv'), index=False)
         return
 
 

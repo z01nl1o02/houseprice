@@ -34,7 +34,7 @@ class HOUSE_PRICE:
         names = data.columns.tolist()
         names.remove('SalePrice')
         self._testX = self._testX[names]
-        if ratio < 1 and ratio > 0:
+        if 0 and ratio < 1 and ratio > 0:
             num = np.int64( len(data) * ratio)
             self._trainX = data[0:num][names]
             self._trainY = data[0:num]['SalePrice']
