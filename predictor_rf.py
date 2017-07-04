@@ -1,10 +1,10 @@
 import os,sys,pdb
 import cPickle
-from sklearn.tree import DecisionTreeRegressor
-class PREDICTOR_DTR:
+from sklearn.ensemble import RandomForestRegressor
+class PREDICTOR_RF:
     def __init__(self):
-        self._name = 'DecisionTree'
-        self._clf = DecisionTreeRegressor()
+        self._name = 'rf'
+        self._clf = RandomForestRegressor()
         return
     def name(self):
         return self._name

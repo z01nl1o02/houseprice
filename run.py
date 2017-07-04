@@ -8,6 +8,7 @@ from predictor_GBoost import PREDICTOR_GBOOST
 from predictor_svr import PREDICTOR_SVR
 from predictor_elasticnet import PREDICTOR_ELASTICNET
 from predictor_dtr import PREDICTOR_DTR
+from predictor_rf import PREDICTOR_RF
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -45,96 +46,51 @@ class HOUSE_PRICE:
             self._verifyX = data[names]
             self._verifyY = data['SalePrice']
         return
+    def train_one_clf(self,clf):
+        clf.train(self._trainX, self._trainY)
+        clf.write(self._outdir)
+        return
     def train(self):
-        clf_ridge = PREDICTOR_RIDGE()
-        clf_ridge.train(self._trainX, self._trainY)
-        clf_ridge.write(self._outdir)
-
-        clf = PREDICTOR_GBOOST()
-        clf.train(self._trainX, self._trainY)
-        clf.write(self._outdir)
-
-
-        clf = PREDICTOR_SVR()
-        clf.train(self._trainX, self._trainY)
-        clf.write(self._outdir)
-
-        clf = PREDICTOR_ELASTICNET()
-        clf.train(self._trainX, self._trainY)
-        clf.write(self._outdir)
-
-
-        clf = PREDICTOR_DTR()
-        clf.train(self._trainX, self._trainY)
-        clf.write(self._outdir)
-
+        self.train_one_clf(PREDICTOR_RIDGE())
+        self.train_one_clf(PREDICTOR_GBOOST())
+        self.train_one_clf(PREDICTOR_SVR())
+        self.train_one_clf(PREDICTOR_ELASTICNET())
+        self.train_one_clf(PREDICTOR_DTR())
+        self.train_one_clf(PREDICTOR_RF())
         return
+    def test_one_clf(self,clf):
+        name = clf.name()
+        clf.read(self._outdir)
+        testC = clf.predict(self._verifyX)
+        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
+        res.to_csv( os.path.join(self._outdir,name + '.log'), index=False, columns = 'Id,Y,C'.split(','))
+
+        testC = clf.predict(self._testX)
+        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,name + '.csv'), 
+                index=False,columns='Id,SalePrice'.split(','))
+        return
+
     def test(self):
-        clf_ridge = PREDICTOR_RIDGE()
-        clf_ridge.read(self._outdir)
-        testC = clf_ridge.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,'ridge.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        self._testX.to_csv('test.convert.csv',index=False)
-        testC = clf_ridge.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv( os.path.join(self._outdir,'ridge.csv'),
-                index=False, columns='Id,SalePrice'.split(','))
-
-        clf = PREDICTOR_GBOOST()
-        clf.read(self._outdir)
-        testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,'GBoost.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        testC = clf.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,'GBoost.csv'), 
-                index=False,columns='Id,SalePrice'.split(','))
-
-
-        clf = PREDICTOR_SVR()
-        clf.read(self._outdir)
-        testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,'svr.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        testC = clf.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,'svr.csv'), 
-                index=False,columns='Id,SalePrice'.split(','))
-
-
-        clf = PREDICTOR_ELASTICNET()
-        clf.read(self._outdir)
-        testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,'elasticnet.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        testC = clf.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,'elasticnet.csv'), 
-                index=False,columns='Id,SalePrice'.split(','))
-
-
-
-        clf = PREDICTOR_DTR()
-        clf.read(self._outdir)
-        testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,'DTR.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        testC = clf.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,'DTR.csv'), 
-                index=False,columns='Id,SalePrice'.split(','))
-
-
+        self.test_one_clf(PREDICTOR_RIDGE())
+        self.test_one_clf(PREDICTOR_GBOOST())
+        self.test_one_clf(PREDICTOR_SVR())
+        self.test_one_clf(PREDICTOR_ELASTICNET())
+        self.test_one_clf(PREDICTOR_DTR())
+        self.test_one_clf(PREDICTOR_RF())
         return
-    def run(self,indir):
-        self.load_and_convert(indir,0.6)
+    def run(self,indir, trainRatio):
+        self.load_and_convert(indir,trainRatio)
         self.train()
         self.test()
         return
 
 if __name__=="__main__":
-    HOUSE_PRICE('result').run('.')
+    ap = argparse.ArgumentParser()
+    ap.add_argument('indir',help='input dir')
+    ap.add_argument('outdir',help='output dir')
+    ap.add_argument('-split',help='split size for train(0,1)', type=np.float64, default=0.8)
+    args = ap.parse_args()
+    HOUSE_PRICE(args.outdir).run(args.indir, args.split)
 
 
 
