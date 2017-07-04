@@ -5,7 +5,9 @@ from sklearn.model_selection import GridSearchCV
 class PREDICTOR_SVR:
     def __init__(self):
         self._name = 'svr'
-        param = {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,20,30,50]}
+        param = {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,20,30,50], 
+                'loss':['epsilon_insensitive','squared_epsilon_insensitive'],
+                'epsilon':[0.0,0.1]}
         self._clf = GridSearchCV(LinearSVR(),param)
         return
     def name(self):

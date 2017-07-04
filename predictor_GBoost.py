@@ -4,8 +4,8 @@ from sklearn.ensemble import GradientBoostingRegressor
 class PREDICTOR_GBOOST:
     def __init__(self):
         self._name = 'gboost'
-        params = {'n_estimators':500, 'max_depth':4,
-                'min_samples_split':2,'learning_rate':0.01,
+        params = {'n_estimators':5000, 'max_depth':4,
+                'min_samples_split':10,'learning_rate':0.01,
                 'loss':'ls'}
         self._clf = GradientBoostingRegressor(**params)
         return

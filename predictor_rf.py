@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor
 class PREDICTOR_RF:
     def __init__(self):
         self._name = 'rf'
-        self._clf = RandomForestRegressor()
+        self._clf = RandomForestRegressor(min_samples_split=12, n_estimators=100)
         return
     def name(self):
         return self._name
