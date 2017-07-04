@@ -2,6 +2,8 @@ import os,sys,pdb
 import numpy as np
 import pandas as pd
 from scipy.stats import skew
+def _standandlize(X,feat,m,s):
+    return (X[feat] - m) / s
 class REGDATA:
     def __init__(self,indir):
         dftrain = pd.read_csv(os.path.join(indir,'train.csv'))
@@ -36,7 +38,9 @@ class REGDATA:
     def standandlize(self):
         feats = 'GrLivArea,TotalBsmtSF,BsmtFinSF1,1stFlrSF,LotArea,2ndFlrSF'.split(',')
         for feat in feats:
-            self._df[feat] = (self._df[feat] - self._df[feat].mean()) / self._df[feat].std
+            m = self._df[feat].mean()
+            s = self._df[feat].std()
+            self._df[feat] = self._df.apply(lambda X: _standandlize(X,feat,m,s), axis=1)
         return
     def selection(self):
         goodfeats = 'Id,SalePrice,OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,YearBuilt,1stFlrSF,OverallCond,KitchenAbvGr,LotArea,YearRemodAdd,2ndFlrSF'.split(',')
