@@ -28,6 +28,7 @@ class HOUSE_PRICE:
         rawdata = REGDATA(indir)
         rawdata.remove_missing_data()
         rawdata.remove_skewing()
+       # rawdata.standandlize()
       #  rawdata.selection()
       #  rawdata.add_higher_order()
         rawdata.one_hot_encoding()
