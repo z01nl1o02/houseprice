@@ -10,6 +10,7 @@ from predictor_svr import PREDICTOR_SVR
 from predictor_elasticnet import PREDICTOR_ELASTICNET
 from predictor_dtr import PREDICTOR_DTR
 from predictor_rf import PREDICTOR_RF
+from predictor_xgb import PREDICTOR_XGB
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -52,6 +53,7 @@ class HOUSE_PRICE:
         clf.write(self._outdir)
         return
     def train(self):
+        self.train_one_clf(PREDICTOR_XGB())
         self.train_one_clf(PREDICTOR_RIDGE())
         self.train_one_clf(PREDICTOR_GBOOST())
         self.train_one_clf(PREDICTOR_SVR())
@@ -73,6 +75,7 @@ class HOUSE_PRICE:
         return
 
     def test(self):
+        self.test_one_clf(PREDICTOR_XGB())
         self.test_one_clf(PREDICTOR_RIDGE())
         self.test_one_clf(PREDICTOR_GBOOST())
         self.test_one_clf(PREDICTOR_SVR())
