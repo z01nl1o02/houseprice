@@ -54,14 +54,10 @@ class HOUSE_PRICE:
         clf.write(self._outdir)
         return
     def train(self):
-        self.train_one_clf(PREDICTOR_XGB())
-        self.train_one_clf(PREDICTOR_RIDGE())
         self.train_one_clf(PREDICTOR_GBOOST())
-        self.train_one_clf(PREDICTOR_SVR())
-        self.train_one_clf(PREDICTOR_ELASTICNET())
-        self.train_one_clf(PREDICTOR_DTR())
-        self.train_one_clf(PREDICTOR_RF())
+        self.train_one_clf(PREDICTOR_XGB())
         self.train_one_clf(PREDICTOR_RIDGEBOOST())
+        self.train_one_clf(PREDICTOR_RIDGE())
         return
     def test_one_clf(self,clf):
         name = clf.name()
@@ -73,17 +69,18 @@ class HOUSE_PRICE:
         testC = clf.predict(self._testX)
         pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,name + '.csv'), 
                 index=False,columns='Id,SalePrice'.split(','))
-        return
+        return np.expm1(testC)
 
     def test(self):
-        self.test_one_clf(PREDICTOR_XGB())
-        self.test_one_clf(PREDICTOR_RIDGE())
-        self.test_one_clf(PREDICTOR_GBOOST())
-        self.test_one_clf(PREDICTOR_SVR())
-        self.test_one_clf(PREDICTOR_ELASTICNET())
-        self.test_one_clf(PREDICTOR_DTR())
-        self.test_one_clf(PREDICTOR_RF())
-        self.test_one_clf(PREDICTOR_RIDGEBOOST())
+        testCs = []
+        testCs.append( self.test_one_clf(PREDICTOR_GBOOST()) )
+        testCs.append( self.test_one_clf(PREDICTOR_XGB()) )
+        testCs.append( self.test_one_clf(PREDICTOR_RIDGEBOOST()) )
+        testCs.append( self.test_one_clf(PREDICTOR_RIDGE()) )
+        res = reduce(lambda X,Y: X + Y,testCs)
+        res = res / len(testCs)
+        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':res}).to_csv(os.path.join(self._outdir, 'stacking.mean.csv'), 
+                index=False,columns='Id,SalePrice'.split(',')) 
         return
     def run(self,indir, trainRatio, testALL):
         self.load_and_convert(indir,trainRatio, testALL)
