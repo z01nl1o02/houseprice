@@ -3,6 +3,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from regdata import REGDATA
+from sklearn.model_selection import KFold
 from predictor_ridge import PREDICTOR_RIDGE
 from predictor_ridgeboost import PREDICTOR_RIDGEBOOST
 from predictor_GBoost import PREDICTOR_GBOOST
@@ -38,6 +39,7 @@ class HOUSE_PRICE:
         names.remove('SalePrice')
         self._testX = self._testX[names]
         if 0 == predictALL and ratio < 1 and ratio > 0: #for stacking, this line should be skipped !
+            print '!!!not all samples used in training'
             num = np.int64( len(data) * ratio)
             self._trainX = data[0:num][names]
             self._trainY = data[0:num]['SalePrice']
@@ -82,6 +84,39 @@ class HOUSE_PRICE:
         pd.DataFrame({'Id':self._testX['Id'],'SalePrice':res}).to_csv(os.path.join(self._outdir, 'stacking.mean.csv'), 
                 index=False,columns='Id,SalePrice'.split(',')) 
         return
+    def RMSE(self,Y,C):
+        Y = np.asarray(Y)
+        C = np.asarray(C)
+        E = np.sqrt( ((Y - C) ** 2).mean())
+        return E
+    def evaluate_one_clf(self,clf, splitN=3):
+        kf = KFold(n_splits = splitN, shuffle=False)
+        errs = []
+        for itrain,itest in kf.split(self._trainX):
+            clf.train(self._trainX.iloc[itrain], self._trainY.iloc[itrain])
+            C = clf.predict(self._trainX.iloc[itest])
+            errs.append( self.RMSE(self._trainY.iloc[itest], C ) )
+        errs = np.asarray(errs)
+        return errs.mean()
+    def evaluate(self,indir,trainRatio,testALL):
+        self.load_and_convert(indir,trainRatio, testALL)
+        splitN = 3
+        clf = PREDICTOR_XGB()
+        err = self.evaluate_one_clf(clf, splitN )
+        print clf.name(),',',err
+
+        clf = PREDICTOR_RIDGE()
+        err = self.evaluate_one_clf(clf, splitN )
+        print clf.name(),',',err
+
+        clf = PREDICTOR_RIDGEBOOST()
+        err = self.evaluate_one_clf(clf, splitN )
+        print clf.name(),',',err
+
+        clf = PREDICTOR_GBOOST()
+        err = self.evaluate_one_clf(clf, splitN )
+        print clf.name(),',',err
+
     def run(self,indir, trainRatio, testALL):
         self.load_and_convert(indir,trainRatio, testALL)
         self.train()
@@ -95,8 +130,8 @@ if __name__=="__main__":
     ap.add_argument('-split',help='split size for train(0,1)', type=np.float64, default=0.8)
     ap.add_argument('-testALL',help='predict all samples(for stacking)', type=np.int64, default=0)
     args = ap.parse_args()
-    HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
-
+    #HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
+    HOUSE_PRICE(args.outdir).evaluate(args.indir, args.split, args.testALL)
 
 
 
