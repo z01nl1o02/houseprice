@@ -12,6 +12,7 @@ from predictor_elasticnet import PREDICTOR_ELASTICNET
 from predictor_dtr import PREDICTOR_DTR
 from predictor_rf import PREDICTOR_RF
 from predictor_xgb import PREDICTOR_XGB
+from predictor_kernelridge import PREDICTOR_KERNELRIDGE
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -27,7 +28,8 @@ class HOUSE_PRICE:
         return
     def load_and_convert(self,indir, ratio,predictALL):
         rawdata = REGDATA(indir)
-        #rawdata.add_new_feats()
+        rawdata.delete_samples()
+        rawdata.add_new_feats()
         #rawdata.delete_feats()
         rawdata.remove_missing_data()
         rawdata.remove_skewing()
