@@ -27,6 +27,8 @@ class HOUSE_PRICE:
         return
     def load_and_convert(self,indir, ratio,predictALL):
         rawdata = REGDATA(indir)
+        #rawdata.add_new_feats()
+        #rawdata.delete_feats()
         rawdata.remove_missing_data()
         rawdata.remove_skewing()
        # rawdata.standandlize()
@@ -130,8 +132,8 @@ if __name__=="__main__":
     ap.add_argument('-split',help='split size for train(0,1)', type=np.float64, default=0.8)
     ap.add_argument('-testALL',help='predict all samples(for stacking)', type=np.int64, default=0)
     args = ap.parse_args()
-    #HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
-    HOUSE_PRICE(args.outdir).evaluate(args.indir, args.split, args.testALL)
+    HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
+    #HOUSE_PRICE(args.outdir).evaluate(args.indir, args.split, args.testALL)
 
 
 

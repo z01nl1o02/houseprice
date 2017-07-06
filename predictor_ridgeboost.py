@@ -4,7 +4,7 @@ from sklearn.linear_model import RidgeCV
 class PREDICTOR_RIDGEBOOST:
     def __init__(self):
         self._name = 'ridgeboost'
-        self._weights = [0.5 for k in range(10)]
+        self._weights = [0.1 for k in range(1000)]
         self._clfs = [ RidgeCV(alphas=[0.05,0.1,0.3,1.3,5,10,15,30,50,75]) for k in range(len(self._weights))]
         return
     def name(self):
