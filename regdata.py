@@ -11,10 +11,10 @@ class REGDATA:
         dftest = pd.read_csv(os.path.join(indir,'test.csv'))
         dftest['fortrain'] = 0
         dftest['SalePrice'] = 0
-        print len(dftrain), len(dftest), len(dftrain) + len(dftest)
+        #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
         self._df = pd.concat([dftrain,dftest],ignore_index=True)
-        print len(dftrain), len(dftest), len(dftrain) + len(dftest)
-        print self._df.index
+        #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
+        #print self._df.index
     def remove_missing_data(self):
         self._df = self._df.fillna(self._df.mean())
         return
@@ -81,12 +81,12 @@ class REGDATA:
         self._df = self._df.drop('AllPub') # const var
         return
     def delete_samples(self):
-        print 'before samples deletion: ', len(self._df)
+        #print 'before samples deletion: ', len(self._df)
         self._df['del'] = self._df.apply(lambda X: X['fortrain'] == 1 and X['GrLivArea'] > 4000,axis=1)
         idx = self._df[self._df['del'] == True].index
-        print self._df.iloc[idx]['del']
+        #print self._df.iloc[idx]['del']
         self._df.drop(idx, inplace=True,axis=0)
-        print 'after samples deletion: ', len(self._df)
+        #print 'after samples deletion: ', len(self._df)
         return
     def get_train(self):
         return self._df[ self._df['fortrain'] == 1 ].drop('fortrain',axis=1)

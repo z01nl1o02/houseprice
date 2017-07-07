@@ -19,7 +19,7 @@ class PREDICTOR:
         self._name = "stacking.mean"
         self._outdir = outdir
     def name(self):
-        return "mean_stacking"
+        return self._name
     def train_one_clf(self,clf, trainX, trainY):
         clf.train(trainX, trainY)
         clf.write(self._outdir)
@@ -27,7 +27,7 @@ class PREDICTOR:
     def train(self,trainX,trainY):
         self.train_one_clf(PREDICTOR_GBOOST(),trainX,trainY)
         self.train_one_clf(PREDICTOR_XGB(),trainX, trainY)
-        self.train_one_clf(PREDICTOR_RIDGEBOOST(),trainX, trainY)
+        #self.train_one_clf(PREDICTOR_RIDGEBOOST(),trainX, trainY)
         self.train_one_clf(PREDICTOR_RIDGE(),trainX, trainY)
         return
     def predict_one_clf(self,clf,testX):
@@ -42,12 +42,12 @@ class PREDICTOR:
         testCs = []
         testCs.append( self.predict_one_clf(PREDICTOR_GBOOST(),testX) )
         testCs.append( self.predict_one_clf(PREDICTOR_XGB(), testX) )
-        testCs.append( self.predict_one_clf(PREDICTOR_RIDGEBOOST(),testX) )
+        #testCs.append( self.predict_one_clf(PREDICTOR_RIDGEBOOST(),testX) )
         testCs.append( self.predict_one_clf(PREDICTOR_RIDGE(), testX) )
         res = reduce(lambda X,Y: X + Y,testCs)
         res = res / len(testCs)
         df = pd.DataFrame({'Id':testX['Id'],'SalePrice':res})
-        df.to_csv(os.path.join(self._outdir, self._name), index=False,columns='Id,SalePrice'.split(',')) 
+        df.to_csv(os.path.join(self._outdir, self._name + ".csv"), index=False,columns='Id,SalePrice'.split(',')) 
         return df['SalePrice']
 class HOUSE_PRICE:
     def __init__(self,outdir):
@@ -69,7 +69,7 @@ class HOUSE_PRICE:
         #rawdata.delete_feats()
         rawdata.remove_missing_data()
         rawdata.remove_skewing()
-       # rawdata.standandlize()
+        rawdata.standandlize()
       #  rawdata.selection()
       #  rawdata.add_higher_order()
         rawdata.one_hot_encoding()
@@ -97,13 +97,15 @@ class HOUSE_PRICE:
             C = clf.predict(self._trainX.iloc[itest])
             errs.append( self.RMSE(self._trainY.iloc[itest], np.log1p(C) ) )
         errs = np.asarray(errs)
-        return errs.mean()
+        m = errs.mean()
+        s = errs.std()
+        return (m,s)
     def evaluate(self,indir):
         self.load_and_convert(indir)
         splitN = 3
         clf = PREDICTOR(self._outdir)
-        err = self.evaluate_one_clf(clf, splitN )
-        print clf.name(),',',err
+        err,std = self.evaluate_one_clf(clf, splitN )
+        print clf.name(),',',err,'+/-',std
 
     def run(self,indir):
         self.load_and_convert(indir)
@@ -114,11 +116,16 @@ class HOUSE_PRICE:
 
 if __name__=="__main__":
     ap = argparse.ArgumentParser()
+    ap.add_argument('mode',help='work or evaluate')
     ap.add_argument('indir',help='input dir')
     ap.add_argument('outdir',help='output dir')
     args = ap.parse_args()
-    HOUSE_PRICE(args.outdir).run(args.indir)
-    #HOUSE_PRICE(args.outdir).evaluate(args.indir)
+    if args.mode == 'work':
+        HOUSE_PRICE(args.outdir).run(args.indir)
+    elif args.mode == 'eva':
+        HOUSE_PRICE(args.outdir).evaluate(args.indir)
+    else:
+        print 'unk option'
 
 
 

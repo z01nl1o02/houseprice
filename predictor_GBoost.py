@@ -6,7 +6,7 @@ class PREDICTOR_GBOOST:
         self._name = 'gboost'
         params = {'n_estimators':5000, 'max_depth':4,
                 'min_samples_split':10,'learning_rate':0.01,
-                'loss':'ls'}
+                'loss':'ls','random_state':100, 'subsample':0.8}
         self._clf = GradientBoostingRegressor(**params)
         return
     def name(self):

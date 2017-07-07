@@ -7,7 +7,7 @@ class PREDICTOR_XGB:
     def __init__(self):
         self._name = 'xgboost'
         params = {'learning_rate': [0.01,0.1], 'n_estimators':[30000], 'colsample_bytree':[0.2],
-        'max_depth':[4],'reg_alpha':[0.9],'reg_lambda':[0.6],'seed':[42]}
+        'max_depth':[4],'reg_alpha':[0.9],'reg_lambda':[0.6],'random_state':[420], 'subsample':[0.8]}
         self._clf = GridSearchCV(xgb.XGBRegressor(),params)
         return
     def name(self):
