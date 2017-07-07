@@ -4,7 +4,7 @@ from sklearn.linear_model import RidgeCV
 class PREDICTOR_RIDGE:
     def __init__(self):
         self._name = 'ridge'
-        self._clf = RidgeCV(alphas=[0.05,0.1,0.3,1.3,5,10,15,30,50,75])
+        self._clf = RidgeCV(alphas=[1,5,10,15,30])
         return
     def name(self):
         return self._name

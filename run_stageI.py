@@ -25,8 +25,8 @@ class PREDICTOR:
         clf.write(self._outdir)
         return
     def train(self,trainX,trainY):
-        self.train_one_clf(PREDICTOR_GBOOST(),trainX,trainY)
         self.train_one_clf(PREDICTOR_XGB(),trainX, trainY)
+        self.train_one_clf(PREDICTOR_GBOOST(),trainX,trainY)
         #self.train_one_clf(PREDICTOR_RIDGEBOOST(),trainX, trainY)
         self.train_one_clf(PREDICTOR_RIDGE(),trainX, trainY)
         return
