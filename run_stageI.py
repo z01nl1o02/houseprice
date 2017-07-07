@@ -13,6 +13,42 @@ from predictor_dtr import PREDICTOR_DTR
 from predictor_rf import PREDICTOR_RF
 from predictor_xgb import PREDICTOR_XGB
 from predictor_kernelridge import PREDICTOR_KERNELRIDGE
+
+class PREDICTOR:
+    def __init__(self, outdir):
+        self._name = "stacking.mean"
+        self._outdir = outdir
+    def name(self):
+        return "mean_stacking"
+    def train_one_clf(self,clf, trainX, trainY):
+        clf.train(trainX, trainY)
+        clf.write(self._outdir)
+        return
+    def train(self,trainX,trainY):
+        self.train_one_clf(PREDICTOR_GBOOST(),trainX,trainY)
+        self.train_one_clf(PREDICTOR_XGB(),trainX, trainY)
+        self.train_one_clf(PREDICTOR_RIDGEBOOST(),trainX, trainY)
+        self.train_one_clf(PREDICTOR_RIDGE(),trainX, trainY)
+        return
+    def predict_one_clf(self,clf,testX):
+        name = clf.name()
+        clf.read(self._outdir)
+        testC = clf.predict(testX)
+        testC = np.expm1(testC)
+        pd.DataFrame({'Id':testX['Id'],'SalePrice':testC}).to_csv(os.path.join(self._outdir,name + '.csv'), 
+                index=False,columns='Id,SalePrice'.split(','))
+        return testC
+    def predict(self, testX):
+        testCs = []
+        testCs.append( self.predict_one_clf(PREDICTOR_GBOOST(),testX) )
+        testCs.append( self.predict_one_clf(PREDICTOR_XGB(), testX) )
+        testCs.append( self.predict_one_clf(PREDICTOR_RIDGEBOOST(),testX) )
+        testCs.append( self.predict_one_clf(PREDICTOR_RIDGE(), testX) )
+        res = reduce(lambda X,Y: X + Y,testCs)
+        res = res / len(testCs)
+        df = pd.DataFrame({'Id':testX['Id'],'SalePrice':res})
+        df.to_csv(os.path.join(self._outdir, self._name), index=False,columns='Id,SalePrice'.split(',')) 
+        return df['SalePrice']
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -26,7 +62,7 @@ class HOUSE_PRICE:
         except Exception,e:
             pass
         return
-    def load_and_convert(self,indir, ratio,predictALL):
+    def load_and_convert(self,indir):
         rawdata = REGDATA(indir)
         rawdata.delete_samples()
         rawdata.add_new_feats()
@@ -41,52 +77,12 @@ class HOUSE_PRICE:
         self._testX = rawdata.get_test()
         names = data.columns.tolist()
         names.remove('SalePrice')
+
         self._testX = self._testX[names]
-        if 0 == predictALL and ratio < 1 and ratio > 0: #for stacking, this line should be skipped !
-            print '!!!not all samples used in training'
-            num = np.int64( len(data) * ratio)
-            self._trainX = data[0:num][names]
-            self._trainY = data[0:num]['SalePrice']
-            self._verifyX = data[num:][names]
-            self._verifyY = data[num:]['SalePrice']
-        else:
-            self._trainX = data[names]
-            self._trainY = data['SalePrice']
-            self._verifyX = data[names]
-            self._verifyY = data['SalePrice']
-        return
-    def train_one_clf(self,clf):
-        clf.train(self._trainX, self._trainY)
-        clf.write(self._outdir)
-        return
-    def train(self):
-        self.train_one_clf(PREDICTOR_GBOOST())
-        self.train_one_clf(PREDICTOR_XGB())
-        self.train_one_clf(PREDICTOR_RIDGEBOOST())
-        self.train_one_clf(PREDICTOR_RIDGE())
-        return
-    def test_one_clf(self,clf):
-        name = clf.name()
-        clf.read(self._outdir)
-        testC = clf.predict(self._verifyX)
-        res = pd.DataFrame({'Id':self._verifyX['Id'],'Y':np.expm1(self._verifyY), 'C':np.expm1(testC)})
-        res.to_csv( os.path.join(self._outdir,name + '.log'), index=False, columns = 'Id,Y,C'.split(','))
-
-        testC = clf.predict(self._testX)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':np.expm1(testC)}).to_csv(os.path.join(self._outdir,name + '.csv'), 
-                index=False,columns='Id,SalePrice'.split(','))
-        return np.expm1(testC)
-
-    def test(self):
-        testCs = []
-        testCs.append( self.test_one_clf(PREDICTOR_GBOOST()) )
-        testCs.append( self.test_one_clf(PREDICTOR_XGB()) )
-        testCs.append( self.test_one_clf(PREDICTOR_RIDGEBOOST()) )
-        testCs.append( self.test_one_clf(PREDICTOR_RIDGE()) )
-        res = reduce(lambda X,Y: X + Y,testCs)
-        res = res / len(testCs)
-        pd.DataFrame({'Id':self._testX['Id'],'SalePrice':res}).to_csv(os.path.join(self._outdir, 'stacking.mean.csv'), 
-                index=False,columns='Id,SalePrice'.split(',')) 
+        self._trainX = data[names]
+        self._trainY = data['SalePrice']
+        self._verifyX = data[names]
+        self._verifyY = data['SalePrice']
         return
     def RMSE(self,Y,C):
         Y = np.asarray(Y)
@@ -99,43 +95,30 @@ class HOUSE_PRICE:
         for itrain,itest in kf.split(self._trainX):
             clf.train(self._trainX.iloc[itrain], self._trainY.iloc[itrain])
             C = clf.predict(self._trainX.iloc[itest])
-            errs.append( self.RMSE(self._trainY.iloc[itest], C ) )
+            errs.append( self.RMSE(self._trainY.iloc[itest], np.log1p(C) ) )
         errs = np.asarray(errs)
         return errs.mean()
-    def evaluate(self,indir,trainRatio,testALL):
-        self.load_and_convert(indir,trainRatio, testALL)
+    def evaluate(self,indir):
+        self.load_and_convert(indir)
         splitN = 3
-        clf = PREDICTOR_XGB()
+        clf = PREDICTOR(self._outdir)
         err = self.evaluate_one_clf(clf, splitN )
         print clf.name(),',',err
 
-        clf = PREDICTOR_RIDGE()
-        err = self.evaluate_one_clf(clf, splitN )
-        print clf.name(),',',err
-
-        clf = PREDICTOR_RIDGEBOOST()
-        err = self.evaluate_one_clf(clf, splitN )
-        print clf.name(),',',err
-
-        clf = PREDICTOR_GBOOST()
-        err = self.evaluate_one_clf(clf, splitN )
-        print clf.name(),',',err
-
-    def run(self,indir, trainRatio, testALL):
-        self.load_and_convert(indir,trainRatio, testALL)
-        self.train()
-        self.test()
+    def run(self,indir):
+        self.load_and_convert(indir)
+        prd = PREDICTOR(self._outdir)
+        prd.train(self._trainX, self._trainY)
+        prd.predict(self._testX)
         return
 
 if __name__=="__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('indir',help='input dir')
     ap.add_argument('outdir',help='output dir')
-    ap.add_argument('-split',help='split size for train(0,1)', type=np.float64, default=0.8)
-    ap.add_argument('-testALL',help='predict all samples(for stacking)', type=np.int64, default=0)
     args = ap.parse_args()
-    HOUSE_PRICE(args.outdir).run(args.indir, args.split, args.testALL)
-    #HOUSE_PRICE(args.outdir).evaluate(args.indir, args.split, args.testALL)
+    HOUSE_PRICE(args.outdir).run(args.indir)
+    #HOUSE_PRICE(args.outdir).evaluate(args.indir)
 
 
 

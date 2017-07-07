@@ -2,8 +2,8 @@ import os,sys,pdb
 import numpy as np
 import pandas as pd
 from scipy.stats import skew
-def _standandlize(X,feat,m,s):
-    return (X[feat] - m) / s
+from sklearn.preprocessing import StandardScaler
+
 class REGDATA:
     def __init__(self,indir):
         dftrain = pd.read_csv(os.path.join(indir,'train.csv'))
@@ -40,10 +40,11 @@ class REGDATA:
         return
     def standandlize(self):
         feats = 'GrLivArea,TotalBsmtSF,BsmtFinSF1,1stFlrSF,LotArea,2ndFlrSF'.split(',')
-        for feat in feats:
-            m = self._df[feat].mean()
-            s = self._df[feat].std()
-            self._df[feat] = self._df.apply(lambda X: _standandlize(X,feat,m,s), axis=1)
+        scaler = StandardScaler()
+        scaler.fit( self._df[feats] )
+        scaled = scaler.transform(self._df[feats])
+        for k,col in enumerate(feats):
+            self._df[col] = scaled[:,k]
         return
     def selection(self):
         goodfeats = 'Id,SalePrice,OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,YearBuilt,1stFlrSF,OverallCond,KitchenAbvGr,LotArea,YearRemodAdd,2ndFlrSF'.split(',')
