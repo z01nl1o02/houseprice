@@ -11,6 +11,15 @@ class REGDATA:
         dftest = pd.read_csv(os.path.join(indir,'test.csv'))
         dftest['fortrain'] = 0
         dftest['SalePrice'] = 0
+        # The test example with ID 666 has GarageArea, GarageCars, and GarageType 
+        # but none of the other fields, so use the mode and median to fill them in.
+        dftest.loc[666, 'GarageQual'] = 'TA'
+        dftest.loc[666, 'GarageCond'] = 'TA'
+        dftest.loc[666, 'GarageFinish'] = 'Unf'
+        dftest.loc[666, 'GarageYrBlt'] = '1980'
+        # The test example 1116 only has GarageType but no other information. We'll 
+        # assume it does not have a garage.
+        dftest.loc[1116, 'GarageType'] = np.nan
         #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
         self._df = pd.concat([dftrain,dftest],ignore_index=True)
         #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
@@ -71,6 +80,24 @@ class REGDATA:
         self._df['highSeason'] = self._df['MoSold'].replace(
                 {1:0,2:0,3:0,4:0,5:1,6:1,7:1,8:1,9:0,10:0,11:0,12:0}
                 )
+                
+        area_cols = ['LotFrontage', 'LotArea', 'MasVnrArea', 'BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF',
+                 'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'GarageArea', 'WoodDeckSF', 
+                 'OpenPorchSF', 'EnclosedPorch', '3SsnPorch', 'ScreenPorch', 'LowQualFinSF', 'PoolArea' ]
+        self._df['TotalArea'] = self._df[area_cols].sum(axis=1)
+        
+        self._df.loc[self._df.Neighborhood == 'NridgHt', 'Neighborhood_Good'] = 1
+        self._df.loc[self._df.Neighborhood == 'Crawfor', 'Neighborhood_Good'] = 1
+        self._df.loc[self._df.Neighborhood == 'StoneBr', 'Neighborhood_Good'] = 1
+        self._df.loc[self._df.Neighborhood == 'Somerst', 'Neighborhood_Good'] = 1
+        self._df.loc[self._df.Neighborhood == 'NoRidge', 'Neighborhood_Good'] = 1
+        self._df['Neighborhood_Good'].fillna(0, inplace=True)
+        
+        self._df['VeryNewHouse'] = (self._df['YearBuilt'] == self._df['YrSold']) * 1
+        # House completed before sale or not
+        self._df['BoughtOffPlan'] = self._df.SaleCondition.replace(
+            {'Abnorml' : 0, 'Alloca' : 0, 'AdjLand' : 0, 'Family' : 0, 'Normal' : 0, 'Partial' : 1})
+    
         self._df['hasScreenPorch'] = self._df.apply( lambda X: X['ScreenPorch'] > 0, axis = 1)
         self._df['hasRedmod'] = self._df.apply(lambda X: X['YearBuilt'] != X['YearRemodAdd'],axis=1)
         self._df['buildLife'] = self._df.apply(lambda X: X['YrSold'] - X['YearBuilt'],axis=1)
