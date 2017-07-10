@@ -25,7 +25,7 @@ class PREDICTOR:
         clf.write(self._outdir)
         return
     def train(self,trainX,trainY):
-        #self.train_one_clf(PREDICTOR_KERNELRIDGE(),trainX, trainY)
+        self.train_one_clf(PREDICTOR_XGB(),trainX, trainY)
         self.train_one_clf(PREDICTOR_ELASTICNET(),trainX,trainY)
         #self.train_one_clf(PREDICTOR_RIDGEBOOST(),trainX, trainY)
         self.train_one_clf(PREDICTOR_RIDGE(),trainX, trainY)
@@ -41,7 +41,7 @@ class PREDICTOR:
     def predict(self, testX):
         testCs = []
         testCs.append( self.predict_one_clf(PREDICTOR_ELASTICNET(),testX) )
-        #testCs.append( self.predict_one_clf(PREDICTOR_KERNELRIDGE(), testX) )
+        testCs.append( self.predict_one_clf(PREDICTOR_XGB(), testX) )
         #testCs.append( self.predict_one_clf(PREDICTOR_RIDGEBOOST(),testX) )
         testCs.append( self.predict_one_clf(PREDICTOR_RIDGE(), testX) )
         res = reduce(lambda X,Y: X + Y,testCs)
