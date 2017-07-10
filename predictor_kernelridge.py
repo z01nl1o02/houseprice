@@ -4,7 +4,7 @@ from sklearn.kernel_ridge import KernelRidge
 class PREDICTOR_KERNELRIDGE:
     def __init__(self):
         self._name = 'kernelridge'
-        self._clf = KernelRidge(alpha=0.3, kernel='polynomial', degree=2, coef0=1.85)
+        self._clf = KernelRidge(alpha=3500, kernel='polynomial', degree=2, coef0=0)
         return
     def name(self):
         return self._name

@@ -4,9 +4,11 @@ from sklearn.ensemble import GradientBoostingRegressor
 class PREDICTOR_GBOOST:
     def __init__(self):
         self._name = 'gboost'
-        params = {'n_estimators':5000, 'max_depth':4,
-                'min_samples_split':10,'learning_rate':0.01,
-                'loss':'ls','random_state':100, 'subsample':0.8}
+        params = {'n_estimators':1000, 'max_depth':19,
+                #'min_samples_split':5,
+                'min_samples_leaf':3,
+                'learning_rate':0.01,
+                'loss':'ls','random_state':100, 'subsample':0.1}
         self._clf = GradientBoostingRegressor(**params)
         return
     def name(self):
