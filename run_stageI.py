@@ -73,6 +73,7 @@ class HOUSE_PRICE:
       #  rawdata.selection()
       #  rawdata.add_higher_order()
         rawdata.one_hot_encoding()
+        rawdata.remove_feature_out_of_test()
         data = rawdata.get_train()
         self._testX = rawdata.get_test()
         names = data.columns.tolist()

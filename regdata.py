@@ -55,6 +55,22 @@ class REGDATA:
         for k,col in enumerate(feats):
             self._df[col] = scaled[:,k]
         return
+    def remove_feature_out_of_test(self):
+        targetFeats = []
+        dftest = self._df[ self._df['fortrain'] == False]
+        for feat in self._df.columns:
+            if feat == 'fortrain' or feat == 'SalePrice':
+                continue
+            vtest = set(list(dftest[feat]))
+            if len(vtest) < 2:
+                targetFeats.append(feat)
+        if len(targetFeats) > 0:
+            print targetFeats
+            print 'before column drop ', len(self._df.columns)
+            for feat in targetFeats:
+                self._df.drop(feat, inplace=True,axis=1)
+            print 'after column drop ', len(self._df.columns)
+        return
     def selection(self):
         goodfeats = 'Id,SalePrice,OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,YearBuilt,1stFlrSF,OverallCond,KitchenAbvGr,LotArea,YearRemodAdd,2ndFlrSF'.split(',')
         self._df = self._df[goodfeats]
@@ -101,6 +117,14 @@ class REGDATA:
         self._df['hasScreenPorch'] = self._df.apply( lambda X: X['ScreenPorch'] > 0, axis = 1)
         self._df['hasRedmod'] = self._df.apply(lambda X: X['YearBuilt'] != X['YearRemodAdd'],axis=1)
         self._df['buildLife'] = self._df.apply(lambda X: X['YrSold'] - X['YearBuilt'],axis=1)
+        self._df['buildLife2'] = self._df.apply(lambda X: X['YrSold'] - X['YearRemodAdd'],axis=1)
+        
+        self._df['SaleCondition_PriceDown'] = self._df.SaleCondition.replace(
+        {'Abnorml': 1, 'Alloca': 2, 'AdjLand': 3, 'Family': 4, 'Normal': 5, 'Partial': 0})
+        
+        self._df['Age'] = 2010 - self._df['YearBuilt'] 
+        self._df['TimeSinceSold'] = 2010 - self._df['YrSold']
+        
         return
     def delete_feats(self):
         self._df = self._df.drop('Alley') #99% NaN
