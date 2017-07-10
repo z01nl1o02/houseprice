@@ -4,7 +4,7 @@ from sklearn.linear_model import ElasticNet
 class PREDICTOR_ELASTICNET:
     def __init__(self):
         self._name = 'ElasticNet'
-        self._clf = ElasticNet()
+        self._clf = ElasticNet(alpha=0.001)
         return
     def name(self):
         return self._name
