@@ -37,9 +37,9 @@ class HOUSE_PRICE:
         rawdata.remove_skewing()
         rawdata.standandlize()
       #  rawdata.selection()
-      #  rawdata.add_higher_order()
+        rawdata.add_higher_order()
         rawdata.one_hot_encoding()
-        rawdata.remove_feature_out_of_test()
+        #rawdata.remove_feature_out_of_test()
         data = rawdata.get_train()
         self._testX = rawdata.get_test()
         names = data.columns.tolist()
@@ -74,6 +74,9 @@ class HOUSE_PRICE:
         clf.add_clf( PREDICTOR_ELASTICNET() )
         clf.add_clf( PREDICTOR_XGB() )
         clf.add_clf( PREDICTOR_RIDGE() )
+        clf.add_clf( PREDICTOR_GBOOST() )
+        clf.add_clf( PREDICTOR_SVR() )
+        clf.add_clf( PREDICTOR_RIDGEBOOST() )
         err,std = self.evaluate_one_clf(clf, splitN )
         print clf.name(),',',err,'+/-',std
     def run(self,indir):
@@ -82,6 +85,9 @@ class HOUSE_PRICE:
         clf.add_clf( PREDICTOR_ELASTICNET() )
         clf.add_clf( PREDICTOR_XGB() )
         clf.add_clf( PREDICTOR_RIDGE() )
+        clf.add_clf( PREDICTOR_GBOOST() )
+        clf.add_clf( PREDICTOR_SVR() )
+        clf.add_clf( PREDICTOR_RIDGEBOOST() )
         clf.train(self._trainX, self._trainY)
         clf.predict(self._testX)
         return

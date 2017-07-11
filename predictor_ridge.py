@@ -4,12 +4,13 @@ from sklearn.linear_model import RidgeCV
 class PREDICTOR_RIDGE:
     def __init__(self):
         self._name = 'ridge'
-        self._clf = RidgeCV(alphas=[1,5,10,15,30])
+        self._clf = RidgeCV(alphas=[1,5,10,15,20,30,50,80])
         return
     def name(self):
         return self._name
     def train(self,X,Y):
         self._clf = self._clf.fit(X,Y)
+        print self._name, ',', self._clf.alpha_
         return
     def write(self,outdir):
         with open(os.path.join(outdir,self._name + '.model'),'wb') as f:

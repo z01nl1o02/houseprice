@@ -78,8 +78,8 @@ class REGDATA:
         numericfeats = 'OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,1stFlrSF,KitchenAbvGr,LotArea,2ndFlrSF'.split(',')
         for feat in numericfeats:
             self._df[feat+'_SQ'] = self._df.apply( lambda X:X[feat] ** 2, axis = 1)
-            #self._df[feat+'_THIRD'] = self._df.apply( lambda X:X[feat] ** 3, axis = 1)
-            self._df[feat+'_SQRT'] = self._df.apply( lambda X: np.sqrt(X[feat]), axis = 1)
+            self._df[feat+'_THIRD'] = self._df.apply( lambda X:X[feat] ** 3, axis = 1)
+            #self._df[feat+'_SQRT'] = self._df.apply( lambda X: np.sqrt(X[feat]), axis = 1)
     def add_new_feats(self):
         self._df['has3SsnPorch'] = self._df.apply(lambda X:X['3SsnPorch'] > 0,axis=1)
         thedict = {None:0,'Unf':1,'BLQ':1,'GLQ':1,"ALQ":1,"LwQ":1,'Rec':1}
@@ -124,7 +124,55 @@ class REGDATA:
         
         self._df['Age'] = 2010 - self._df['YearBuilt'] 
         self._df['TimeSinceSold'] = 2010 - self._df['YrSold']
+        # IR2 and IR3 don't appear that often, so just make a distinction
+        # between regular and irregular.
+        self._df['IsRegularLotShape'] = (self._df['LotShape'] == 'Reg') * 1
+
+        # Most properties are level; bin the other possibilities together
+        # as 'not level'.
+        self._df['IsLandLevel'] = (self._df['LandContour'] == 'Lvl') * 1
+
+        # Most land slopes are gentle; treat the others as 'not gentle'.
+        self._df['IsLandSlopeGentle'] = (self._df['LandSlope'] == 'Gtl') * 1
+
+        # Most properties use standard circuit breakers.
+        self._df['IsElectricalSBrkr'] = (self._df['Electrical'] == 'SBrkr') * 1
+
+        # About 2/3rd have an attached garage.
+        self._df['IsGarageDetached'] = (self._df['GarageType'] == 'Detchd') * 1
+
+        # Most have a paved drive. Treat dirt/gravel and partial pavement
+        # as 'not paved'.
+        self._df['IsPavedDrive'] = (self._df['PavedDrive'] == 'Y') * 1
+
+        # The only interesting 'misc. feature' is the presence of a shed.
+        self._df['HasShed'] = (self._df['MiscFeature'] == 'Shed') * 1.  
+
+        # If YearRemodAdd != YearBuilt, then a remodeling took place at some point.
+        self._df['Remodeled'] = (self._df['YearRemodAdd'] != self._df['YearBuilt']) * 1
         
+        # Did a remodeling happen in the year the house was sold?
+        self._df['RecentRemodel'] = (self._df['YearRemodAdd'] == self._df['YrSold']) * 1
+        
+        # Was this house sold in the year it was built?
+        self._df['VeryNewHouse'] = (self._df['YearBuilt'] == self._df['YrSold']) * 1
+
+        self._df['Has2ndFloor'] = (self._df['2ndFlrSF'] == 0) * 1
+        self._df['HasMasVnr'] = (self._df['MasVnrArea'] == 0) * 1
+        self._df['HasWoodDeck'] = (self._df['WoodDeckSF'] == 0) * 1
+        self._df['HasOpenPorch'] = (self._df['OpenPorchSF'] == 0) * 1
+        self._df['HasEnclosedPorch'] = (self._df['EnclosedPorch'] == 0) * 1
+        self._df['Has3SsnPorch'] = (self._df['3SsnPorch'] == 0) * 1
+        self._df['HasScreenPorch'] = (self._df['ScreenPorch'] == 0) * 1    
+        
+        self._df['SaleCondition_PriceDown'] = self._df.SaleCondition.replace(
+        {'Abnorml': 1, 'Alloca': 2, 'AdjLand': 3, 'Family': 4, 'Normal': 5, 'Partial': 0})
+        self._df['BadHeating'] = self._df.HeatingQC.replace(
+                {'Ex': 0, 'Gd': 1, 'TA': 2, 'Fa': 3, 'Po': 4})
+        self._df['TotalArea1st2nd'] = self._df['1stFlrSF'] + self._df['2ndFlrSF']
+        self._df['NewerDwelling'] = self._df['MSSubClass'].replace(
+            {20: 1, 30: 0, 40: 0, 45: 0,50: 0, 60: 1, 70: 0, 75: 0, 80: 0, 85: 0,
+             90: 0, 120: 1, 150: 0, 160: 0, 180: 0, 190: 0})           
         return
     def delete_feats(self):
         self._df = self._df.drop('Alley') #99% NaN
