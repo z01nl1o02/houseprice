@@ -62,12 +62,12 @@ class HOUSE_PRICE:
     def evaluate(self,indir):
         self.load_and_convert(indir)
         splitN = 3
-        clf = STACK_MEAN(self._outdir)
+        clf = STACK_LINEAR(self._outdir)
         err,std = self.evaluate_one_clf(clf, splitN )
         print clf.name(),',',err,'+/-',std
     def run(self,indir):
         self.load_and_convert(indir)
-        prd = STACK_MEAN(self._outdir)
+        prd = STACK_LINEAR(self._outdir)
         prd.train(self._trainX, self._trainY)
         prd.predict(self._testX)
         return

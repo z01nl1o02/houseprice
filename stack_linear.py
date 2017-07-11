@@ -18,8 +18,8 @@ class STACK_LINEAR:
     def __init__(self, outdir):
         self._name = "stacking.linear"
         self._outdir = outdir
-        self._clfs = [ PREDICTOR_XGB(), PREDICTOR_ELASTICNET(), PREDICTOR_RIDGE() ]
-        self._clf2 = Ridge(alpha = 1.0)
+        self._clfs = [PREDICTOR_ELASTICNET(), PREDICTOR_RIDGE() ]
+        self._clf2 = Ridge(alpha = 1.0, random_state=4000, normalize=False)
     def name(self):
         return self._name
     def train_one_clf(self,clf, trainX, trainY):
