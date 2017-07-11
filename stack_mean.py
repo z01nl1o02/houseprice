@@ -18,7 +18,10 @@ class STACK_MEAN:
     def __init__(self, outdir):
         self._name = "stacking.mean"
         self._outdir = outdir
-        self._clfs = [  PREDICTOR_ELASTICNET(), PREDICTOR_RIDGE() ]
+        self._clfs = []
+    def add_clf(self,clf):
+        self._clfs.append(clf)
+        return
     def name(self):
         return self._name
     def train_one_clf(self,clf, trainX, trainY):

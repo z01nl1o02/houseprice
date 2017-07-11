@@ -6,7 +6,15 @@ from regdata import REGDATA
 from sklearn.model_selection import KFold
 from stack_mean import STACK_MEAN
 from stack_linear import STACK_LINEAR
-
+from predictor_ridge import PREDICTOR_RIDGE
+from predictor_ridgeboost import PREDICTOR_RIDGEBOOST
+from predictor_GBoost import PREDICTOR_GBOOST
+from predictor_svr import PREDICTOR_SVR
+from predictor_elasticnet import PREDICTOR_ELASTICNET
+from predictor_dtr import PREDICTOR_DTR
+from predictor_rf import PREDICTOR_RF
+from predictor_xgb import PREDICTOR_XGB
+from predictor_kernelridge import PREDICTOR_KERNELRIDGE
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -62,14 +70,20 @@ class HOUSE_PRICE:
     def evaluate(self,indir):
         self.load_and_convert(indir)
         splitN = 3
-        clf = STACK_LINEAR(self._outdir)
+        clf = STACK_MEAN(self._outdir)
+        clf.add_clf( PREDICTOR_ELASTICNET() )
+        clf.add_clf( PREDICTOR_XGB() )
+        clf.add_clf( PREDICTOR_RIDGE() )
         err,std = self.evaluate_one_clf(clf, splitN )
         print clf.name(),',',err,'+/-',std
     def run(self,indir):
         self.load_and_convert(indir)
-        prd = STACK_LINEAR(self._outdir)
-        prd.train(self._trainX, self._trainY)
-        prd.predict(self._testX)
+        clf = STACK_MEAN(self._outdir)
+        clf.add_clf( PREDICTOR_ELASTICNET() )
+        clf.add_clf( PREDICTOR_XGB() )
+        clf.add_clf( PREDICTOR_RIDGE() )
+        clf.train(self._trainX, self._trainY)
+        clf.predict(self._testX)
         return
 
 if __name__=="__main__":
