@@ -64,8 +64,7 @@ class HOUSE_PRICE:
         self._testX = self._testX[names]
         self._trainX = data[names]
         self._trainY = data['SalePrice']
-        self._verifyX = data[names]
-        self._verifyY = data['SalePrice']
+
         return
 
     def evaluate_one_clf(self,splitN=3):
