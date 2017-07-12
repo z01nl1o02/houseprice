@@ -15,6 +15,22 @@ from predictor_dtr import PREDICTOR_DTR
 from predictor_rf import PREDICTOR_RF
 from predictor_xgb import PREDICTOR_XGB
 from predictor_kernelridge import PREDICTOR_KERNELRIDGE
+import multiprocessing as mp
+
+
+def RMSE(Y,C):
+    Y = np.asarray(Y)
+    C = np.asarray(C)
+    E = np.sqrt( ((Y - C) ** 2).mean())
+    return E
+
+def mt_train(param):
+    clf, trainX,trainY,testX, testY = param
+    clf.train(trainX, trainY, savemodel = 0)
+    C = clf.predict(testX, readmodel = 0)
+    err = RMSE(testY, np.log1p(C))
+    return err
+
 class HOUSE_PRICE:
     def __init__(self,outdir):
         self._outdir = outdir
@@ -51,43 +67,45 @@ class HOUSE_PRICE:
         self._verifyX = data[names]
         self._verifyY = data['SalePrice']
         return
-    def RMSE(self,Y,C):
-        Y = np.asarray(Y)
-        C = np.asarray(C)
-        E = np.sqrt( ((Y - C) ** 2).mean())
-        return E
-    def evaluate_one_clf(self,clf, splitN=3):
+
+    def evaluate_one_clf(self,splitN=3):
         kf = KFold(n_splits = splitN, shuffle=False)
-        errs = []
+        params = []
         for itrain,itest in kf.split(self._trainX):
-            clf.train(self._trainX.iloc[itrain], self._trainY.iloc[itrain])
-            C = clf.predict(self._trainX.iloc[itest])
-            errs.append( self.RMSE(self._trainY.iloc[itest], np.log1p(C) ) )
+            clf = self.get_assemble_clf()
+            params.append( (clf, self._trainX.iloc[itrain], self._trainY.iloc[itrain],  self._trainX.iloc[itest], self._trainY.iloc[itest] ) )
+        results = [] 
+        pool = mp.Pool(3)
+        for param in params:
+            #mt_train(param)
+            results.append( pool.apply_async(mt_train, (param,)) )
+        pool.close()
+        pool.join()
+        errs = []
+        for res in results:
+            errs.append( res.get())
         errs = np.asarray(errs)
         m = errs.mean()
         s = errs.std()
         return (m,s)
+    def get_assemble_clf(self):
+        clf = STACK_MEAN(self._outdir)
+        clf.add_clf( PREDICTOR_ELASTICNET() )
+        clf.add_clf( PREDICTOR_XGB() )
+        clf.add_clf( PREDICTOR_RIDGE() )
+        return clf
+        clf.add_clf( PREDICTOR_GBOOST() )
+        clf.add_clf( PREDICTOR_SVR() )
+        clf.add_clf( PREDICTOR_RIDGEBOOST() )
+        return clf
     def evaluate(self,indir):
         self.load_and_convert(indir)
-        splitN = 3
-        clf = STACK_MEAN(self._outdir)
-        clf.add_clf( PREDICTOR_ELASTICNET() )
-        clf.add_clf( PREDICTOR_XGB() )
-        clf.add_clf( PREDICTOR_RIDGE() )
-        clf.add_clf( PREDICTOR_GBOOST() )
-        clf.add_clf( PREDICTOR_SVR() )
-        clf.add_clf( PREDICTOR_RIDGEBOOST() )
-        err,std = self.evaluate_one_clf(clf, splitN )
-        print clf.name(),',',err,'+/-',std
+        splitN = 3 
+        err,std = self.evaluate_one_clf(splitN )
+        print err,'+/-',std
     def run(self,indir):
         self.load_and_convert(indir)
-        clf = STACK_MEAN(self._outdir)
-        clf.add_clf( PREDICTOR_ELASTICNET() )
-        clf.add_clf( PREDICTOR_XGB() )
-        clf.add_clf( PREDICTOR_RIDGE() )
-        clf.add_clf( PREDICTOR_GBOOST() )
-        clf.add_clf( PREDICTOR_SVR() )
-        clf.add_clf( PREDICTOR_RIDGEBOOST() )
+        clf = self.get_assemble_clf()
         clf.train(self._trainX, self._trainY)
         clf.predict(self._testX)
         return

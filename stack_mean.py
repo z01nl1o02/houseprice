@@ -24,26 +24,28 @@ class STACK_MEAN:
         return
     def name(self):
         return self._name
-    def train_one_clf(self,clf, trainX, trainY):
+    def train_one_clf(self,clf, trainX, trainY,savemodel):
         clf.train(trainX, trainY)
-        clf.write(self._outdir)
+        if savemodel != 0:
+            clf.write(self._outdir)
         return
-    def train(self,trainX,trainY):
+    def train(self,trainX,trainY,savemodel=1):
         for clf in self._clfs:
-            self.train_one_clf(clf,trainX, trainY)
+            self.train_one_clf(clf,trainX, trainY, savemodel)
         return
-    def predict_one_clf(self,clf,testX):
+    def predict_one_clf(self,clf,testX,readmodel):
         name = clf.name()
-        clf.read(self._outdir)
+        if readmodel != 0:
+            clf.read(self._outdir)
         testC = clf.predict(testX)
         testC = np.expm1(testC)
         pd.DataFrame({'Id':testX['Id'],'SalePrice':testC}).to_csv(os.path.join(self._outdir,name + '.csv'), 
                 index=False,columns='Id,SalePrice'.split(','))
         return testC
-    def predict(self, testX):
+    def predict(self, testX,readmodel = 1):
         testCs = []
         for clf in self._clfs:
-            testCs.append( self.predict_one_clf(clf,testX) )
+            testCs.append( self.predict_one_clf(clf,testX,readmodel) )
         res = reduce(lambda X,Y: X + Y,testCs)
         res = res / len(testCs)
         df = pd.DataFrame({'Id':testX['Id'],'SalePrice':res})
