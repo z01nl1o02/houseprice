@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import skew
 from sklearn.preprocessing import StandardScaler
-
+from cvtcategory import CVT_CATEG
 class REGDATA:
     def __init__(self,indir):
         dftrain = pd.read_csv(os.path.join(indir,'train.csv'))
@@ -20,22 +20,34 @@ class REGDATA:
         # The test example 1116 only has GarageType but no other information. We'll 
         # assume it does not have a garage.
         dftest.loc[1116, 'GarageType'] = np.nan
-        #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
         self._df = pd.concat([dftrain,dftest],ignore_index=True)
-        #print len(dftrain), len(dftest), len(dftrain) + len(dftest)
-        #print self._df.index
-    def remove_missing_data(self):
-        self._df = self._df.fillna(self._df.mean())
+        #GarageYrBlt should be numeric!
+        self._df['GarageYrBlt'].replace("NaN","1980",inplace=True)
+        idx = self._df[ self._df['GarageYrBlt'].isnull() ].index
+        self._df['GarageYrBlt'].iloc[idx] = '1980'
+        self._df['GarageYrBlt'] = np.int64( self._df['GarageYrBlt'])
+    def save(self,path):
+        self._df.to_csv(path,index=False)
+        
+    def categ2num_and_fillnan(self):
+        feats = self._df.columns.tolist()
+        categ = CVT_CATEG('categ')
+        categ_feats = categ.get_categ_feats()
+        for feat in feats:
+            if feat in set(categ_feats):
+                idx = self._df[ self._df[feat].isnull() ].index
+                #self._df.loc[idx,feat] = "EMPYT"
+                self._df[feat][idx] = "EMPTY"
+            else:
+                self._df[feat] = self._df[feat].fillna(self._df[feat].mean()) #numeric featus 
+        self._df.to_csv("numeric.csv",index=False)
         return
-        total = self._df.isnull().sum().sort_values(ascending=False)
-        percent = (self._df.isnull().sum() / self._df.isnull().count()).sort_values(ascending=False)
-        md = pd.DataFrame({'total':total,'percent':percent})
-        idx = (md[md['total']>1]).index
-        self._df = self._df.drop(idx,1)
-        return
-    def one_hot_encoding(self):
-        self._df = pd.get_dummies(self._df)
-        return
+    def dummies(self):
+        feats = self._df.columns.tolist()
+        categ = CVT_CATEG('categ')
+        categ_feats = categ.get_categ_feats()
+        self._df = pd.get_dummies(self._df, columns = categ_feats, dummy_na=True)
+        return 
     def remove_skewing(self):
         numeric_feats = self._df.dtypes[ self._df.dtypes != 'object'].index
         skewed_feats = self._df[numeric_feats].apply(lambda x:skew(x.dropna()))
@@ -48,9 +60,16 @@ class REGDATA:
         self._df[skewed_feats] = np.log1p(self._df[skewed_feats])
         return
     def standandlize(self):
-        feats = 'GrLivArea,TotalBsmtSF,BsmtFinSF1,1stFlrSF,LotArea,2ndFlrSF'.split(',')
+        feats = 'OverallQual,GrLivArea,TotalBsmtSF,BsmtFinSF1,GarageCars,1stFlrSF,KitchenAbvGr,LotArea,2ndFlrSF'.split(',')
+        newfeats = []
+        for feat in feats:
+            newfeats.append(feat + '_SQ')
+            newfeats.append(feat+ '_THIRD')
+            newfeats.append(feat + '_SQRT')
+        feats.extend(newfeats)
         scaler = StandardScaler()
-        scaler.fit( self._df[feats] )
+        dftrain = self._df[ self._df.fortrain == 1]
+        scaler.fit(dftrain[feats] )
         scaled = scaler.transform(self._df[feats])
         for k,col in enumerate(feats):
             self._df[col] = scaled[:,k]
@@ -79,19 +98,16 @@ class REGDATA:
         for feat in numericfeats:
             self._df[feat+'_SQ'] = self._df.apply( lambda X:X[feat] ** 2, axis = 1)
             self._df[feat+'_THIRD'] = self._df.apply( lambda X:X[feat] ** 3, axis = 1)
-            #self._df[feat+'_SQRT'] = self._df.apply( lambda X: np.sqrt(X[feat]), axis = 1)
+            self._df[feat+'_SQRT'] = self._df.apply( lambda X: np.sqrt( np.absolute(X[feat])), axis = 1)
     def add_new_feats(self):
         self._df['has3SsnPorch'] = self._df.apply(lambda X:X['3SsnPorch'] > 0,axis=1)
-        thedict = {None:0,'Unf':1,'BLQ':1,'GLQ':1,"ALQ":1,"LwQ":1,'Rec':1}
+        thedict = {'EMPTY':0,'Unf':1,'BLQ':1,'GLQ':1,"ALQ":1,"LwQ":1,'Rec':1}
         self._df['hasBsmtFinType2'] = self._df['BsmtFinType2'].map(thedict).astype(int)
-       # thedict = {"NA":0,'MnPrv':1,'GdWo':1,'GdPrv':1}
-       # print self._df['Fence'].head(10)
-       # self._df['hasFance'] = self._df['Fence'].map(thedict).astype(int)
-        self._df['hasFance'] = self._df.apply(lambda X:X['Fence'] is not None, axis=1)
-        #thedict = {None:0,'Gd':1,'TA':1,'Ex':1,'Fa':1}
-        #self._df['hasFire'] = self._df['FireplaceQu'].map(thedict).astype(int)
-        self._df['hasFire'] = self._df.apply(lambda X:X['FireplaceQu'] is not None, axis=1)
-        self._df['hasGradBathRoom'] = self._df.apply( lambda X:X['FullBath'] is not None, axis = 1)
+        thedict = {"EMPTY":0,'MnPrv':1,'GdWo':1,'GdPrv':1,'MnWw':1}
+        self._df['hasFance'] = self._df['Fence'].map(thedict).astype(int)
+        thedict = {'EMPTY':0,'Gd':1,'TA':1,'Ex':1,'Fa':1,'Po':1}
+        self._df['hasFire'] = self._df['FireplaceQu'].map(thedict).astype(int)
+        self._df['hasGradBathRoom'] = self._df.apply( lambda X:X['FullBath'] > 0, axis = 1)
 
         self._df['highSeason'] = self._df['MoSold'].replace(
                 {1:0,2:0,3:0,4:0,5:1,6:1,7:1,8:1,9:0,10:0,11:0,12:0}
@@ -118,12 +134,33 @@ class REGDATA:
         self._df['hasRedmod'] = self._df.apply(lambda X: X['YearBuilt'] != X['YearRemodAdd'],axis=1)
         self._df['buildLife'] = self._df.apply(lambda X: X['YrSold'] - X['YearBuilt'],axis=1)
         self._df['buildLife2'] = self._df.apply(lambda X: X['YrSold'] - X['YearRemodAdd'],axis=1)
+        self._df['buildLife2BIN'] = self._df.apply(lambda X: X['buildLife2'] >= 5*30,axis=1)
         
         self._df['SaleCondition_PriceDown'] = self._df.SaleCondition.replace(
         {'Abnorml': 1, 'Alloca': 2, 'AdjLand': 3, 'Family': 4, 'Normal': 5, 'Partial': 0})
         
         self._df['Age'] = 2010 - self._df['YearBuilt'] 
+        self._df['AgeBin'] = self._df['Age'].apply(lambda X:np.int64(X/10))
+        self._df['AgeBin'] = self._df.AgeBin.replace(
+        {
+        0:0,
+        1:0,
+        2:0,
+        3:1,
+        4:1,
+        5:1,
+        6:1,
+        7:1,
+        8:1,
+        9:1,
+        10:1,
+        12:1,
+        13:2,
+        })
+  
+        
         self._df['TimeSinceSold'] = 2010 - self._df['YrSold']
+
         # IR2 and IR3 don't appear that often, so just make a distinction
         # between regular and irregular.
         self._df['IsRegularLotShape'] = (self._df['LotShape'] == 'Reg') * 1
@@ -172,7 +209,9 @@ class REGDATA:
         self._df['TotalArea1st2nd'] = self._df['1stFlrSF'] + self._df['2ndFlrSF']
         self._df['NewerDwelling'] = self._df['MSSubClass'].replace(
             {20: 1, 30: 0, 40: 0, 45: 0,50: 0, 60: 1, 70: 0, 75: 0, 80: 0, 85: 0,
-             90: 0, 120: 1, 150: 0, 160: 0, 180: 0, 190: 0})           
+             90: 0, 120: 1, 150: 0, 160: 0, 180: 0, 190: 0})    
+
+                
         return
     def delete_feats(self):
         self._df = self._df.drop('Alley') #99% NaN
