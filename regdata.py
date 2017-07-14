@@ -26,6 +26,9 @@ class REGDATA:
         idx = self._df[ self._df['GarageYrBlt'].isnull() ].index
         self._df['GarageYrBlt'].iloc[idx] = '1980'
         self._df['GarageYrBlt'] = np.int64( self._df['GarageYrBlt'])
+        
+        self._df.drop('Utilities',inplace=True,axis=1)
+        self._df.drop('Street',inplace=True,axis=1)
     def save(self,path):
         self._df.to_csv(path,index=False)
         
@@ -46,6 +49,8 @@ class REGDATA:
         feats = self._df.columns.tolist()
         categ = CVT_CATEG('categ')
         categ_feats = categ.get_categ_feats()
+        categ_feats.remove('Utilities')
+        categ_feats.remove('Street')
         self._df = pd.get_dummies(self._df, columns = categ_feats, dummy_na=True)
         return 
     def remove_skewing(self):

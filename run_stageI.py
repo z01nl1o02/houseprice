@@ -55,6 +55,7 @@ class HOUSE_PRICE:
         rawdata.dummies()
         rawdata.add_higher_order()
         rawdata.standandlize()
+        rawdata.save("6.csv")
         data = rawdata.get_train()
         self._testX = rawdata.get_test()
         names = data.columns.tolist()
