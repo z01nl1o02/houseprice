@@ -42,7 +42,7 @@ class REGDATA:
                 #self._df.loc[idx,feat] = "EMPYT"
                 self._df[feat][idx] = "EMPTY"
             else:
-                self._df[feat] = self._df[feat].fillna(self._df[feat].mean()) #numeric featus 
+                self._df[feat] = self._df[feat].fillna(self._df[feat].median()) #numeric featus 
         self._df.to_csv("numeric.csv",index=False)
         return
     def dummies(self):
