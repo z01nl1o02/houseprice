@@ -226,9 +226,23 @@ class REGDATA:
     def delete_samples(self):
         #print 'before samples deletion: ', len(self._df)
         self._df['del'] = self._df.apply(lambda X: X['fortrain'] == 1 and X['GrLivArea'] > 4000,axis=1)
+        #self._df['del'] = self._df.apply(lambda X: X['fortrain'] == 1 and X['SalePrice'] > 550000,axis=1)
         idx = self._df[self._df['del'] == True].index
         #print self._df.iloc[idx]['del']
         self._df.drop(idx, inplace=True,axis=0)
+        
+        bad_idxs = [
+               522,1291,1317,687,
+               #521,1288,1313,685,
+               #520,1285,1309,683,
+               #519,1282,1305,681
+               ]
+        for idx in bad_idxs:
+            for k in range(idx - 10, idx + 10):
+                if k not in set( self._df.index.tolist()):
+                    continue
+                self._df.drop(k, inplace=True,axis=0)
+        
         #print 'after samples deletion: ', len(self._df)
         return
     def get_train(self):

@@ -3,6 +3,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import KFold
 from predictor_ridge import PREDICTOR_RIDGE
 from predictor_ridgeboost import PREDICTOR_RIDGEBOOST
@@ -14,12 +15,18 @@ from predictor_rf import PREDICTOR_RF
 from predictor_xgb import PREDICTOR_XGB
 from predictor_kernelridge import PREDICTOR_KERNELRIDGE
 
+def train_one_clf_mt(param):
+    k,clf,X,Y = param
+    clf.train(X, Y)
+    return (k,clf)
+    
 class STACK_LINEAR:
     def __init__(self, outdir):
         self._name = "stacking.linear"
         self._outdir = outdir
         self._clfs = []
-        self._clf2 = Ridge(alpha = 10, random_state=4000, normalize=False)
+        #self._clf2 = Ridge(alpha = 10, random_state=4000, normalize=False)
+        self._clf2 = LinearRegression(normalize = False)
     def add_clf(self,clf):
         self._clfs.append(clf)
         return
@@ -41,7 +48,7 @@ class STACK_LINEAR:
         clf.train(trainX, trainY)
         #clf.write(self._outdir)
         return
-    def train(self,trainX,trainY,savemodel=0):
+    def train(self,trainX,trainY,cpu = 1):
         X0,Y0,X1,Y1 = self.split(trainX,trainY)
         trainC = np.empty( (len(self._clfs), len(Y1) ) )
         for k,clf in enumerate(self._clfs):
@@ -49,13 +56,15 @@ class STACK_LINEAR:
             trainC[k,:] = np.asarray( clf.predict(X1) )
         trainC = np.transpose(trainC)
         self._clf2.fit(trainC, Y1)
+        for clf,coef in zip(self._clfs, self._clf2.coef_):
+            print clf.name(),',',coef
         return
     def predict_one_clf(self,clf,testX):
         name = clf.name()
         testC = clf.predict(testX)
         testC = np.expm1(testC)
         return testC
-    def predict(self, testX,readmodel=0):
+    def predict(self, testX):
         testC = np.empty( (len(self._clfs), testX.shape[0] ) )
         for k,clf in enumerate(self._clfs):
             testC[k,:] = np.asarray( self.predict_one_clf(clf,testX)  )

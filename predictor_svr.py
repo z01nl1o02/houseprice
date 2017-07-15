@@ -10,7 +10,7 @@ class PREDICTOR_SVR:
         'kernel':['rbf'],
         'C':[10,20,30,50], 
         'epsilon':[0.0]}
-        self._clf = GridSearchCV(SVR(),param, n_jobs = 3)
+        self._clf = GridSearchCV(SVR(),param, n_jobs = 1)
         self._param = None
         return
     def name(self):

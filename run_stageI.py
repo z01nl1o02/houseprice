@@ -26,8 +26,8 @@ def RMSE(Y,C):
 
 def mt_train(param):
     clf, trainX,trainY,testX, testY = param
-    clf.train(trainX, trainY, savemodel = 0)
-    C = clf.predict(testX, readmodel = 0)
+    clf.train(trainX, trainY)
+    C = clf.predict(testX)
     err = RMSE(testY, np.log1p(C))
     return err
 
@@ -96,7 +96,7 @@ class HOUSE_PRICE:
         clf.add_clf( PREDICTOR_GBOOST() )
         clf.add_clf( PREDICTOR_SVR() )
         clf.add_clf( PREDICTOR_RIDGEBOOST() )
-        return clf
+        
     def evaluate(self,indir):
         self.load_and_convert(indir)
         splitN = 3 
@@ -105,7 +105,10 @@ class HOUSE_PRICE:
     def run(self,indir):
         self.load_and_convert(indir)
         clf = self.get_assemble_clf()
-        clf.train(self._trainX, self._trainY)
+        cpu = mp.cpu_count()
+        clf.train(self._trainX, self._trainY,cpu)
+        C = clf.predict(self._trainX)
+        pd.DataFrame( {'Y':np.expm1(self._trainY), 'C':C} ).to_csv( os.path.join(self._outdir,'train.test.csv'),index=False,columns='Y,C'.split(','))
         clf.predict(self._testX)
         return
 
